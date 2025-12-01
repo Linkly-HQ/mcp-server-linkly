@@ -74,6 +74,12 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 
 For detailed setup instructions and usage examples, see the [Claude Desktop Setup Guide](docs/claude-desktop-setup.md).
 
+## Quick Start with ChatGPT
+
+You can use Linkly with ChatGPT by creating a Custom GPT with Actions. This allows you to manage short links directly in ChatGPT conversations.
+
+For step-by-step instructions, see the [ChatGPT Setup Guide](docs/chatgpt-setup.md).
+
 ## Usage with Claude Code
 
 Add to your Claude Code MCP settings:
