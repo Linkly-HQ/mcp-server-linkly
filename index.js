@@ -546,7 +546,11 @@ const tools = [
 async function handleToolCall(name, args) {
   switch (name) {
     case "create_link": {
-      const result = await apiRequest("POST", "/zapier/link", args);
+      const result = await apiRequest(
+        "POST",
+        `/api/v1/workspace/${WORKSPACE_ID}/links`,
+        args
+      );
       return {
         content: [
           {
@@ -559,7 +563,11 @@ async function handleToolCall(name, args) {
 
     case "update_link": {
       const { link_id, ...updateData } = args;
-      const result = await apiRequest("PUT", `/zapier/link/${link_id}`, updateData);
+      const result = await apiRequest(
+        "POST",
+        `/api/v1/workspace/${WORKSPACE_ID}/links`,
+        { id: link_id, ...updateData }
+      );
       return {
         content: [
           {
@@ -571,7 +579,10 @@ async function handleToolCall(name, args) {
     }
 
     case "delete_link": {
-      const result = await apiRequest("DELETE", `/zapier/link/${args.link_id}`);
+      const result = await apiRequest(
+        "DELETE",
+        `/api/v1/workspace/${WORKSPACE_ID}/links/${args.link_id}`
+      );
       return {
         content: [
           {
@@ -583,7 +594,7 @@ async function handleToolCall(name, args) {
     }
 
     case "get_link": {
-      const result = await apiRequest("GET", `/zapier/link/${args.link_id}`);
+      const result = await apiRequest("GET", `/api/v1/get_link/${args.link_id}`);
       return {
         content: [
           {
@@ -610,20 +621,18 @@ async function handleToolCall(name, args) {
     }
 
     case "get_clicks": {
-      let url = `/zapier/clicks?workspace_id=${WORKSPACE_ID}`;
-      const result = await apiRequest("GET", url);
+      const params = new URLSearchParams();
+      params.append("format", "json");
+      if (args.link_id) params.append("link_id", args.link_id);
 
-      // Filter by link_id if provided
-      let clicks = result;
-      if (args.link_id) {
-        clicks = result.filter((c) => c.link_id === args.link_id);
-      }
+      const url = `/api/v1/workspace/${WORKSPACE_ID}/clicks/export?${params.toString()}`;
+      const result = await apiRequest("GET", url);
 
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(clicks, null, 2),
+            text: JSON.stringify(result, null, 2),
           },
         ],
       };
@@ -771,7 +780,7 @@ async function handleToolCall(name, args) {
     case "list_webhooks": {
       const result = await apiRequest(
         "GET",
-        `/api/v1/workspaces/${WORKSPACE_ID}/webhooks`
+        `/api/v1/workspace/${WORKSPACE_ID}/webhooks`
       );
       return {
         content: [
@@ -786,7 +795,7 @@ async function handleToolCall(name, args) {
     case "subscribe_webhook": {
       const result = await apiRequest(
         "POST",
-        `/api/v1/workspaces/${WORKSPACE_ID}/webhooks`,
+        `/api/v1/workspace/${WORKSPACE_ID}/webhooks`,
         { url: args.url }
       );
       return {
@@ -803,7 +812,7 @@ async function handleToolCall(name, args) {
       const encodedUrl = encodeURIComponent(args.url);
       await apiRequest(
         "DELETE",
-        `/api/v1/workspaces/${WORKSPACE_ID}/webhooks/${encodedUrl}`
+        `/api/v1/workspace/${WORKSPACE_ID}/webhooks/${encodedUrl}`
       );
       return {
         content: [
@@ -819,7 +828,7 @@ async function handleToolCall(name, args) {
     case "list_link_webhooks": {
       const result = await apiRequest(
         "GET",
-        `/api/v1/links/${args.link_id}/webhooks`
+        `/api/v1/link/${args.link_id}/webhooks`
       );
       return {
         content: [
@@ -834,7 +843,7 @@ async function handleToolCall(name, args) {
     case "subscribe_link_webhook": {
       const result = await apiRequest(
         "POST",
-        `/api/v1/links/${args.link_id}/webhooks`,
+        `/api/v1/link/${args.link_id}/webhooks`,
         { url: args.url }
       );
       return {
@@ -851,7 +860,7 @@ async function handleToolCall(name, args) {
       const encodedUrl = encodeURIComponent(args.url);
       await apiRequest(
         "DELETE",
-        `/api/v1/links/${args.link_id}/webhooks/${encodedUrl}`
+        `/api/v1/link/${args.link_id}/webhooks/${encodedUrl}`
       );
       return {
         content: [
@@ -872,7 +881,7 @@ async function handleToolCall(name, args) {
 const server = new Server(
   {
     name: "linkly-mcp-server",
-    version: "1.2.0",
+    version: "1.3.0",
   },
   {
     capabilities: {

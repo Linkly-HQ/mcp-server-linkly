@@ -63,10 +63,21 @@ servers:
   - url: https://app.linklyhq.com
 
 paths:
-  /zapier/link:
+  /api/v1/workspace/{workspace_id}/links:
     post:
-      operationId: createLink
-      summary: Create a new short link
+      operationId: createOrUpdateLink
+      summary: Create a new short link or update an existing one
+      parameters:
+        - name: workspace_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-WORKSPACE-ID
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -75,18 +86,13 @@ paths:
               type: object
               required:
                 - url
-                - workspace_id
-                - api_key
               properties:
+                id:
+                  type: integer
+                  description: Link ID (include to update existing link)
                 url:
                   type: string
                   description: The destination URL
-                workspace_id:
-                  type: string
-                  description: Your Linkly workspace ID
-                api_key:
-                  type: string
-                  description: Your Linkly API key
                 name:
                   type: string
                   description: Nickname for the link
@@ -150,9 +156,33 @@ paths:
                   description: Fallback URL after expiry
       responses:
         '200':
-          description: Link created successfully
+          description: Link created or updated successfully
 
-  /zapier/link/{link_id}:
+  /api/v1/workspace/{workspace_id}/links/{link_id}:
+    delete:
+      operationId: deleteLink
+      summary: Delete a link
+      parameters:
+        - name: workspace_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: link_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-WORKSPACE-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Link deleted
+
+  /api/v1/get_link/{link_id}:
     get:
       operationId: getLink
       summary: Get details of a specific link
@@ -170,65 +200,6 @@ paths:
       responses:
         '200':
           description: Link details
-
-    put:
-      operationId: updateLink
-      summary: Update an existing link
-      parameters:
-        - name: link_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - workspace_id
-                - api_key
-              properties:
-                workspace_id:
-                  type: string
-                api_key:
-                  type: string
-                url:
-                  type: string
-                name:
-                  type: string
-                note:
-                  type: string
-                enabled:
-                  type: boolean
-                utm_source:
-                  type: string
-                utm_medium:
-                  type: string
-                utm_campaign:
-                  type: string
-      responses:
-        '200':
-          description: Link updated
-
-    delete:
-      operationId: deleteLink
-      summary: Delete a link
-      parameters:
-        - name: link_id
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: X-WORKSPACE-ID
-          in: header
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Link deleted
 
   /api/v1/workspace/{workspace_id}/links/export:
     get:
@@ -254,13 +225,13 @@ paths:
         '200':
           description: List of links
 
-  /zapier/clicks:
+  /api/v1/workspace/{workspace_id}/clicks/export:
     get:
       operationId: getClicks
       summary: Get recent click data
       parameters:
         - name: workspace_id
-          in: query
+          in: path
           required: true
           schema:
             type: string
@@ -269,6 +240,17 @@ paths:
           required: true
           schema:
             type: string
+        - name: link_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by link ID
+        - name: format
+          in: query
+          schema:
+            type: string
+            default: json
+          description: Response format (json or csv)
       responses:
         '200':
           description: Recent clicks
@@ -446,9 +428,8 @@ Click **Preview** and try asking:
 
 | Action | Description |
 |--------|-------------|
-| `createLink` | Create a new short link with optional UTM params, pixels, and more |
+| `createOrUpdateLink` | Create a new short link or update an existing one (include `id` to update) |
 | `getLink` | Get details of a specific link |
-| `updateLink` | Update an existing link's settings |
 | `deleteLink` | Delete a link |
 | `listLinks` | List all links in your workspace (with optional search) |
 | `getClicks` | Get recent click data |
