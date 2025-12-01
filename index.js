@@ -255,6 +255,145 @@ const tools = [
       required: [],
     },
   },
+  {
+    name: "get_analytics",
+    description:
+      "Get time-series click analytics data for charting. Returns click counts over time.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        start: {
+          type: "string",
+          description: "Start date in YYYY-MM-DD format (default: 30 days ago)",
+        },
+        end: {
+          type: "string",
+          description: "End date in YYYY-MM-DD format (default: today)",
+        },
+        link_id: {
+          type: "integer",
+          description: "Filter by specific link ID",
+        },
+        frequency: {
+          type: "string",
+          enum: ["day", "hour"],
+          description: "Time granularity: 'day' (default) or 'hour'",
+        },
+        country: {
+          type: "string",
+          description: "Filter by country code (e.g., 'US', 'GB')",
+        },
+        platform: {
+          type: "string",
+          description: "Filter by platform (e.g., 'desktop', 'mobile', 'tablet')",
+        },
+        browser: {
+          type: "string",
+          description: "Filter by browser name",
+        },
+        unique: {
+          type: "boolean",
+          description: "Count unique clicks only (by IP)",
+        },
+        bots: {
+          type: "string",
+          enum: ["include", "exclude", "only"],
+          description: "Bot filtering: include (default), exclude, or only",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_analytics_by",
+    description:
+      "Get click counts grouped by a dimension (country, platform, browser, etc.). Useful for breakdowns and top-N reports.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        counter: {
+          type: "string",
+          enum: [
+            "country",
+            "platform",
+            "browser_name",
+            "referer",
+            "isp",
+            "link_id",
+            "destination",
+            "bot_name",
+          ],
+          description: "Dimension to group by (required)",
+        },
+        start: {
+          type: "string",
+          description: "Start date in YYYY-MM-DD format (default: 30 days ago)",
+        },
+        end: {
+          type: "string",
+          description: "End date in YYYY-MM-DD format (default: today)",
+        },
+        link_id: {
+          type: "integer",
+          description: "Filter by specific link ID",
+        },
+        country: {
+          type: "string",
+          description: "Filter by country code",
+        },
+        platform: {
+          type: "string",
+          description: "Filter by platform",
+        },
+        unique: {
+          type: "boolean",
+          description: "Count unique clicks only",
+        },
+        bots: {
+          type: "string",
+          enum: ["include", "exclude", "only"],
+          description: "Bot filtering",
+        },
+      },
+      required: ["counter"],
+    },
+  },
+  {
+    name: "export_clicks",
+    description:
+      "Export detailed click records with full information (timestamp, browser, country, URL, platform, referer, bot, ISP, params).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        start: {
+          type: "string",
+          description: "Start date in YYYY-MM-DD format (default: 30 days ago)",
+        },
+        end: {
+          type: "string",
+          description: "End date in YYYY-MM-DD format (default: yesterday)",
+        },
+        link_id: {
+          type: "integer",
+          description: "Filter by specific link ID",
+        },
+        country: {
+          type: "string",
+          description: "Filter by country code",
+        },
+        platform: {
+          type: "string",
+          description: "Filter by platform",
+        },
+        bots: {
+          type: "string",
+          enum: ["include", "exclude", "only"],
+          description: "Bot filtering",
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 // Handle tool execution
@@ -339,6 +478,79 @@ async function handleToolCall(name, args) {
           {
             type: "text",
             text: JSON.stringify(clicks, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "get_analytics": {
+      const params = new URLSearchParams();
+      if (args.start) params.append("start", args.start);
+      if (args.end) params.append("end", args.end);
+      if (args.link_id) params.append("link_id", args.link_id);
+      if (args.frequency) params.append("frequency", args.frequency);
+      if (args.country) params.append("country", args.country);
+      if (args.platform) params.append("platform", args.platform);
+      if (args.browser) params.append("browser", args.browser);
+      if (args.unique) params.append("unique", args.unique);
+      if (args.bots) params.append("bots", args.bots);
+
+      const queryString = params.toString();
+      const url = `/api/v1/workspace/${WORKSPACE_ID}/clicks${queryString ? `?${queryString}` : ""}`;
+      const result = await apiRequest("GET", url);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "get_analytics_by": {
+      const params = new URLSearchParams();
+      params.append("counter", args.counter);
+      if (args.start) params.append("start", args.start);
+      if (args.end) params.append("end", args.end);
+      if (args.link_id) params.append("link_id", args.link_id);
+      if (args.country) params.append("country", args.country);
+      if (args.platform) params.append("platform", args.platform);
+      if (args.unique) params.append("unique", args.unique);
+      if (args.bots) params.append("bots", args.bots);
+
+      const url = `/api/v1/workspace/${WORKSPACE_ID}/clicks/counters/${args.counter}?${params.toString()}`;
+      const result = await apiRequest("GET", url);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "export_clicks": {
+      const params = new URLSearchParams();
+      params.append("format", "json");
+      if (args.start) params.append("start", args.start);
+      if (args.end) params.append("end", args.end);
+      if (args.link_id) params.append("link_id", args.link_id);
+      if (args.country) params.append("country", args.country);
+      if (args.platform) params.append("platform", args.platform);
+      if (args.bots) params.append("bots", args.bots);
+
+      const url = `/api/v1/workspace/${WORKSPACE_ID}/clicks/export?${params.toString()}`;
+      const result = await apiRequest("GET", url);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
           },
         ],
       };

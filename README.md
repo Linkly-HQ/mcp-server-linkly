@@ -4,12 +4,18 @@ An MCP (Model Context Protocol) server for Linkly that allows AI assistants to c
 
 ## Features
 
+### Link Management
 - **create_link** - Create new short links with full customization (UTM params, pixels, Open Graph, etc.)
 - **update_link** - Update existing links
 - **delete_link** - Delete links
 - **get_link** - Get details of a specific link
 - **list_links** - List all links in the workspace with click statistics
+
+### Analytics
 - **get_clicks** - Get recent click data
+- **get_analytics** - Get time-series click data for charting (daily/hourly)
+- **get_analytics_by** - Get click counts grouped by dimension (country, platform, browser, etc.)
+- **export_clicks** - Export detailed click records
 
 ## Installation
 
@@ -127,6 +133,51 @@ Get recent click data.
 
 **Optional parameters:**
 - `link_id` - Filter clicks by link ID
+
+### get_analytics
+
+Get time-series click analytics data for charting.
+
+**Optional parameters:**
+- `start` - Start date (YYYY-MM-DD, default: 30 days ago)
+- `end` - End date (YYYY-MM-DD, default: today)
+- `link_id` - Filter by specific link
+- `frequency` - Time granularity: `day` (default) or `hour`
+- `country` - Filter by country code (e.g., 'US', 'GB')
+- `platform` - Filter by platform (desktop, mobile, tablet)
+- `browser` - Filter by browser name
+- `unique` - Count unique clicks only (by IP)
+- `bots` - Bot filtering: `include` (default), `exclude`, or `only`
+
+### get_analytics_by
+
+Get click counts grouped by a dimension. Useful for breakdowns and top-N reports.
+
+**Required parameters:**
+- `counter` - Dimension to group by: `country`, `platform`, `browser_name`, `referer`, `isp`, `link_id`, `destination`, `bot_name`
+
+**Optional parameters:**
+- `start` - Start date (YYYY-MM-DD)
+- `end` - End date (YYYY-MM-DD)
+- `link_id` - Filter by specific link
+- `country` - Filter by country code
+- `platform` - Filter by platform
+- `unique` - Count unique clicks only
+- `bots` - Bot filtering
+
+### export_clicks
+
+Export detailed click records with full information.
+
+**Optional parameters:**
+- `start` - Start date (YYYY-MM-DD, default: 30 days ago)
+- `end` - End date (YYYY-MM-DD, default: yesterday)
+- `link_id` - Filter by specific link
+- `country` - Filter by country code
+- `platform` - Filter by platform
+- `bots` - Bot filtering
+
+Returns: Array of click records with timestamp, browser, country, URL, link_id, platform, referer, bot, ISP, and params.
 
 ## License
 
