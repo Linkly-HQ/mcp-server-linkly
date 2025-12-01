@@ -1,0 +1,23 @@
+{
+  "name": "linkly-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Linkly - Create and manage short links, track clicks, and automate URL management",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "linkly-mcp-server": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "mcp",
+    "linkly",
+    "url-shortener",
+    "link-management"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
