@@ -394,6 +394,152 @@ const tools = [
       required: [],
     },
   },
+  // Domain Management
+  {
+    name: "list_domains",
+    description: "List all custom domains in the workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "create_domain",
+    description:
+      "Add a custom domain to the workspace. The domain must be configured to point to Linkly's servers.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "The domain name (e.g., 'links.example.com')",
+        },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "delete_domain",
+    description: "Remove a custom domain from the workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        domain_id: {
+          type: "integer",
+          description: "The ID of the domain to delete",
+        },
+      },
+      required: ["domain_id"],
+    },
+  },
+  // Link Search
+  {
+    name: "search_links",
+    description:
+      "Search for links by name, URL, or note. Returns matching links with click statistics.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Search query to match against link names, URLs, and notes",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  // Workspace Webhooks
+  {
+    name: "list_webhooks",
+    description:
+      "List all webhook URLs subscribed to the workspace. These receive click events for all links.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "subscribe_webhook",
+    description:
+      "Subscribe a webhook URL to receive click events for all links in the workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The webhook URL to receive click event notifications",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "unsubscribe_webhook",
+    description: "Unsubscribe a webhook URL from workspace click events.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The webhook URL to unsubscribe",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  // Link Webhooks
+  {
+    name: "list_link_webhooks",
+    description: "List all webhook URLs subscribed to a specific link.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        link_id: {
+          type: "integer",
+          description: "The ID of the link",
+        },
+      },
+      required: ["link_id"],
+    },
+  },
+  {
+    name: "subscribe_link_webhook",
+    description: "Subscribe a webhook URL to receive click events for a specific link.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        link_id: {
+          type: "integer",
+          description: "The ID of the link",
+        },
+        url: {
+          type: "string",
+          description: "The webhook URL to receive click event notifications",
+        },
+      },
+      required: ["link_id", "url"],
+    },
+  },
+  {
+    name: "unsubscribe_link_webhook",
+    description: "Unsubscribe a webhook URL from a specific link's click events.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        link_id: {
+          type: "integer",
+          description: "The ID of the link",
+        },
+        url: {
+          type: "string",
+          description: "The webhook URL to unsubscribe",
+        },
+      },
+      required: ["link_id", "url"],
+    },
+  },
 ];
 
 // Handle tool execution
@@ -556,6 +702,167 @@ async function handleToolCall(name, args) {
       };
     }
 
+    // Domain Management
+    case "list_domains": {
+      const result = await apiRequest(
+        "GET",
+        `/api/v1/workspace/${WORKSPACE_ID}/domains`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "create_domain": {
+      const result = await apiRequest(
+        "POST",
+        `/api/v1/workspace/${WORKSPACE_ID}/domains`,
+        { name: args.name }
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "delete_domain": {
+      const result = await apiRequest(
+        "DELETE",
+        `/api/v1/workspace/${WORKSPACE_ID}/domains/${args.domain_id}`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, message: result }, null, 2),
+          },
+        ],
+      };
+    }
+
+    // Link Search
+    case "search_links": {
+      const params = new URLSearchParams();
+      params.append("search", args.query);
+      const result = await apiRequest(
+        "GET",
+        `/api/v1/workspace/${WORKSPACE_ID}/links/export?${params.toString()}`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    // Workspace Webhooks
+    case "list_webhooks": {
+      const result = await apiRequest(
+        "GET",
+        `/api/v1/workspaces/${WORKSPACE_ID}/webhooks`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "subscribe_webhook": {
+      const result = await apiRequest(
+        "POST",
+        `/api/v1/workspaces/${WORKSPACE_ID}/webhooks`,
+        { url: args.url }
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "unsubscribe_webhook": {
+      const encodedUrl = encodeURIComponent(args.url);
+      await apiRequest(
+        "DELETE",
+        `/api/v1/workspaces/${WORKSPACE_ID}/webhooks/${encodedUrl}`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true }, null, 2),
+          },
+        ],
+      };
+    }
+
+    // Link Webhooks
+    case "list_link_webhooks": {
+      const result = await apiRequest(
+        "GET",
+        `/api/v1/links/${args.link_id}/webhooks`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "subscribe_link_webhook": {
+      const result = await apiRequest(
+        "POST",
+        `/api/v1/links/${args.link_id}/webhooks`,
+        { url: args.url }
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "unsubscribe_link_webhook": {
+      const encodedUrl = encodeURIComponent(args.url);
+      await apiRequest(
+        "DELETE",
+        `/api/v1/links/${args.link_id}/webhooks/${encodedUrl}`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true }, null, 2),
+          },
+        ],
+      };
+    }
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -565,7 +872,7 @@ async function handleToolCall(name, args) {
 const server = new Server(
   {
     name: "linkly-mcp-server",
-    version: "1.0.0",
+    version: "1.2.0",
   },
   {
     capabilities: {

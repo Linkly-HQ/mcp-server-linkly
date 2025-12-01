@@ -10,12 +10,26 @@ An MCP (Model Context Protocol) server for Linkly that allows AI assistants to c
 - **delete_link** - Delete links
 - **get_link** - Get details of a specific link
 - **list_links** - List all links in the workspace with click statistics
+- **search_links** - Search links by name, URL, or note
 
 ### Analytics
 - **get_clicks** - Get recent click data
 - **get_analytics** - Get time-series click data for charting (daily/hourly)
 - **get_analytics_by** - Get click counts grouped by dimension (country, platform, browser, etc.)
 - **export_clicks** - Export detailed click records
+
+### Domain Management
+- **list_domains** - List all custom domains in the workspace
+- **create_domain** - Add a custom domain
+- **delete_domain** - Remove a custom domain
+
+### Webhook Management
+- **list_webhooks** - List workspace-level webhook subscriptions
+- **subscribe_webhook** - Subscribe a URL to receive click events for all links
+- **unsubscribe_webhook** - Unsubscribe a webhook URL
+- **list_link_webhooks** - List webhooks for a specific link
+- **subscribe_link_webhook** - Subscribe a URL to a specific link's click events
+- **unsubscribe_link_webhook** - Unsubscribe from a link's click events
 
 ## Installation
 
@@ -178,6 +192,72 @@ Export detailed click records with full information.
 - `bots` - Bot filtering
 
 Returns: Array of click records with timestamp, browser, country, URL, link_id, platform, referer, bot, ISP, and params.
+
+### search_links
+
+Search for links by name, URL, or note.
+
+**Required parameters:**
+- `query` - Search string to match against link names, URLs, and notes
+
+### list_domains
+
+List all custom domains in the workspace. No parameters required.
+
+### create_domain
+
+Add a custom domain to the workspace.
+
+**Required parameters:**
+- `name` - The domain name (e.g., 'links.example.com')
+
+### delete_domain
+
+Remove a custom domain from the workspace.
+
+**Required parameters:**
+- `domain_id` - The ID of the domain to delete
+
+### list_webhooks
+
+List all webhook URLs subscribed to the workspace. No parameters required.
+
+### subscribe_webhook
+
+Subscribe a webhook URL to receive click events for all links.
+
+**Required parameters:**
+- `url` - The webhook URL to receive click event notifications
+
+### unsubscribe_webhook
+
+Unsubscribe a webhook URL from workspace click events.
+
+**Required parameters:**
+- `url` - The webhook URL to unsubscribe
+
+### list_link_webhooks
+
+List all webhook URLs subscribed to a specific link.
+
+**Required parameters:**
+- `link_id` - The ID of the link
+
+### subscribe_link_webhook
+
+Subscribe a webhook URL to receive click events for a specific link.
+
+**Required parameters:**
+- `link_id` - The ID of the link
+- `url` - The webhook URL to receive click event notifications
+
+### unsubscribe_link_webhook
+
+Unsubscribe a webhook URL from a specific link's click events.
+
+**Required parameters:**
+- `link_id` - The ID of the link
+- `url` - The webhook URL to unsubscribe
 
 ## License
 
