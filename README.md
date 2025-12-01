@@ -1,6 +1,10 @@
 # Linkly MCP Server
 
-An MCP (Model Context Protocol) server for Linkly that allows AI assistants to create and manage short links, track clicks, and automate URL management.
+An MCP (Model Context Protocol) server that allows AI assistants like Claude and ChatGPT to create and manage short links, track clicks, and automate URL management.
+
+## About Linkly
+
+[Linkly](https://linklyhq.com) is a powerful link management platform that lets you create branded short links, track clicks in real-time, and optimize your marketing campaigns. Features include custom domains, UTM parameters, retargeting pixels, QR codes, and detailed analytics.
 
 ## Features
 
