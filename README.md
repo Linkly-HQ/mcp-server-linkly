@@ -49,7 +49,7 @@ export LINKLY_WORKSPACE_ID="your-workspace-id"
 
 You can find these at [Settings → API](https://app.linklyhq.com/app/user/api) in your Linkly dashboard.
 
-## Usage with Claude Desktop
+## Quick Start with Claude Desktop
 
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
@@ -57,8 +57,8 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 {
   "mcpServers": {
     "linkly": {
-      "command": "node",
-      "args": ["/path/to/shortr/integrations/mcp-server/index.js"],
+      "command": "npx",
+      "args": ["-y", "linkly-mcp-server"],
       "env": {
         "LINKLY_API_KEY": "your-api-key",
         "LINKLY_WORKSPACE_ID": "your-workspace-id"
@@ -68,6 +68,8 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
+For detailed setup instructions and usage examples, see the [Claude Desktop Setup Guide](docs/claude-desktop-setup.md).
+
 ## Usage with Claude Code
 
 Add to your Claude Code MCP settings:
@@ -76,8 +78,8 @@ Add to your Claude Code MCP settings:
 {
   "mcpServers": {
     "linkly": {
-      "command": "node",
-      "args": ["/path/to/shortr/integrations/mcp-server/index.js"],
+      "command": "npx",
+      "args": ["-y", "linkly-mcp-server"],
       "env": {
         "LINKLY_API_KEY": "your-api-key",
         "LINKLY_WORKSPACE_ID": "your-workspace-id"
