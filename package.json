@@ -12,11 +12,22 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "linkly",
     "url-shortener",
-    "link-management"
+    "link-management",
+    "analytics",
+    "claude",
+    "ai"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Linkly-HQ/linkly-mcp-server.git"
+  },
+  "homepage": "https://linklyhq.com",
+  "author": "Linkly <support@linklyhq.com>",
+  "mcpName": "com.linklyhq/linkly",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
   }
