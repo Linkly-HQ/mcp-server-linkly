@@ -3,12 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 const API_BASE = "https://app.linklyhq.com";
 
 /** Generic Linkly API request */
-async function apiRequest(
-  env: Env,
-  method: string,
-  path: string,
-  body: any = null
-) {
+async function apiRequest(env: Env, method: string, path: string, body: any = null) {
   const url = `${API_BASE}${path}`;
   const options: RequestInit = {
     method,
@@ -19,6 +14,7 @@ async function apiRequest(
       "X-API-KEY": env.API_KEY,
     },
   };
+
   if (body) {
     options.body = JSON.stringify({
       ...body,
@@ -26,20 +22,22 @@ async function apiRequest(
       api_key: env.API_KEY,
     });
   }
+
   const resp = await fetch(url, options);
+  const text = await resp.text();
+
   if (!resp.ok) {
-    const text = await resp.text();
     throw new Error(`Linkly API ${resp.status}: ${text}`);
   }
-  const contentType = resp.headers.get("Content-Type") || "";
-  if (contentType.includes("application/json")) {
-    return resp.json();
-  } else {
-    return resp.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
   }
 }
 
-/** Available tools */
+/** MCP tools available */
 const tools = [
   {
     name: "linkly.create_link",
@@ -47,68 +45,70 @@ const tools = [
     inputSchema: {
       type: "object",
       properties: {
-        url: { type: "string", description: "Destination URL", required: true },
-        name: { type: "string", description: "Name/nickname for the link" },
+        url: { type: "string", description: "Destination URL" },
+        name: { type: "string", description: "Name for the link" }
       },
-      required: ["url"],
-    },
-  },
+      required: ["url"]
+    }
+  }
 ];
 
-/** Handle tool calls */
+/** Handle tool call */
 async function handleToolCall(env: Env, name: string, args: any) {
-  switch (name) {
-    case "create_link": {
-      const result = await apiRequest(
-        env,
-        "POST",
-        `/api/v1/workspace/${env.WORKSPACE_ID}/links`,
-        args
-      );
-      return {
-        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-      };
-    }
-    // Add other tool implementations here if needed
-    default:
-      throw new Error(`Unknown tool: ${name}`);
+  if (name === "create_link") {
+    const result = await apiRequest(
+      env,
+      "POST",
+      `/api/v1/workspace/${env.WORKSPACE_ID}/links`,
+      args
+    );
+
+    return {
+      content: [
+        { type: "text", text: JSON.stringify(result, null, 2) }
+      ]
+    };
   }
+
+  throw new Error(`Unknown tool: ${name}`);
 }
 
-/** Send JSON-RPC response via WebSocket */
-function sendJSONRPC(socket: WebSocket, payload: any) {
+/** Send JSON-RPC message */
+function sendJSON(socket: WebSocket, msg: any) {
   try {
-    socket.send(JSON.stringify(payload));
-  } catch (e) {
-    console.error("WebSocket send error:", e);
+    socket.send(JSON.stringify(msg));
+  } catch (err) {
+    console.log("WebSocket send error:", err);
   }
 }
 
-/** Durable Object */
+/** Durable Object WebSocket */
 export class MyDurableObject extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
   }
 
   async fetch(request: Request): Promise<Response> {
-    const upgradeHeader = request.headers.get("Upgrade") || "";
-    if (upgradeHeader.toLowerCase() !== "websocket") {
+    if (request.headers.get("Upgrade") !== "websocket") {
       return new Response(
-        "MCP Durable Object is running. Connect via WebSocket.",
+        "Linkly MCP is running. Connect via WebSocket.",
         { status: 200 }
       );
     }
 
     const pair = new WebSocketPair();
-    const [client, server] = Object.values(pair);
+    const client = pair[0];
+    const server = pair[1];
+
     server.accept();
 
-    server.addEventListener("message", async (evt: any) => {
-      let data: any;
+    server.addEventListener("message", async (evt) => {
+      let msg;
+
       try {
-        data = typeof evt.data === "string" ? JSON.parse(evt.data) : evt.data;
-      } catch (err) {
-        sendJSONRPC(server, {
+        msg = JSON.parse(evt.data);
+      } catch {
+        sendJSON(server, {
           jsonrpc: "2.0",
           id: null,
           error: { code: -32700, message: "Parse error" },
@@ -116,81 +116,71 @@ export class MyDurableObject extends DurableObject<Env> {
         return;
       }
 
-      const id = data.id ?? null;
-      const method = data.method;
-      const params = data.params ?? {};
+      const { id, method, params = {} } = msg;
 
-      try {
-        // Return tools list
-        if (
-          method === "tools/list" ||
-          method === "tools/list_tools" ||
-          method === "list_tools"
-        ) {
-          sendJSONRPC(server, { jsonrpc: "2.0", id, result: { tools } });
-          return;
-        }
-
-        // Handle Postman MCP call
-        if (method === "tools/call" || method === "call_tool" || method === "call") {
-          const name = params.name || params?.tool?.name || null;
-          const args = params.arguments || params.args || params?.arguments || {};
-          if (!name) {
-            sendJSONRPC(server, {
-              jsonrpc: "2.0",
-              id,
-              error: { code: -32602, message: "Missing tool name" },
-            });
-            return;
-          }
-          const value = await handleToolCall(this.env, name, args);
-          sendJSONRPC(server, { jsonrpc: "2.0", id, result: value });
-          return;
-        }
-
-        // Handle ChatGPT Desktop: method like "linkly.create_link"
-        if (method && method.startsWith("linkly.")) {
-          const name = method.replace("linkly.", "");
-          const args = params || {};
-          const value = await handleToolCall(this.env, name, args);
-          sendJSONRPC(server, { jsonrpc: "2.0", id, result: value });
-          return;
-        }
-
-        // Unknown method
-        sendJSONRPC(server, {
+      // REQUIRED BY CHATGPT DESKTOP
+      if (method === "initialize") {
+        sendJSON(server, {
           jsonrpc: "2.0",
           id,
-          error: { code: -32601, message: "Method not found" },
+          result: {
+            protocolVersion: "1.0",
+            capabilities: {},
+          },
         });
-      } catch (err: any) {
-        sendJSONRPC(server, {
-          jsonrpc: "2.0",
-          id,
-          error: { code: 32000, message: err?.message || String(err) },
-        });
+        return;
       }
-    });
 
-    server.addEventListener("close", () => {});
-    server.addEventListener("error", () => {});
+      // REQUIRED BY CHATGPT DESKTOP
+      if (method === "ping") {
+        sendJSON(server, { jsonrpc: "2.0", id, result: "pong" });
+        return;
+      }
+
+      // Tools discovery
+      if (method === "tools/list") {
+        sendJSON(server, {
+          jsonrpc: "2.0",
+          id,
+          result: { tools },
+        });
+        return;
+      }
+
+      // ChatGPT Desktop Direct Tool Call
+      if (method.startsWith("linkly.")) {
+        const name = method.replace("linkly.", "");
+        const result = await handleToolCall(this.env, name, params);
+        sendJSON(server, { jsonrpc: "2.0", id, result });
+        return;
+      }
+
+      // Postman-style universal call
+      if (method === "tools/call") {
+        const toolName = params.name?.replace("linkly.", "");
+        const args = params.arguments || {};
+        const result = await handleToolCall(this.env, toolName, args);
+        sendJSON(server, { jsonrpc: "2.0", id, result });
+        return;
+      }
+
+      // Unknown
+      sendJSON(server, {
+        jsonrpc: "2.0",
+        id,
+        error: { code: -32601, message: "Unknown method" },
+      });
+    });
 
     return new Response(null, { status: 101, webSocket: client });
   }
 }
 
-/** Exported handler */
+/** Worker entry */
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    if (!env.API_KEY || !env.WORKSPACE_ID) {
-      return new Response(
-        "Error: LINKLY_API_KEY and LINKLY_WORKSPACE_ID environment variables are required",
-        { status: 400 }
-      );
-    }
-
-    const objectId = env.MY_DURABLE_OBJECT.idFromName(env.WORKSPACE_ID);
-    const object = env.MY_DURABLE_OBJECT.get(objectId);
-    return object.fetch(request);
-  },
-} satisfies ExportedHandler<Env>;
+  async fetch(req: Request, env: Env) {
+    const objId = env.MY_DURABLE_OBJECT.idFromName("linkly-do");
+    const stub = env.MY_DURABLE_OBJECT.get(objId);
+    return stub.fetch(req);
+  }
+};
