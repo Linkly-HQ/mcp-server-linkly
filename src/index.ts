@@ -42,39 +42,17 @@ async function apiRequest(
 /** Available tools */
 const tools = [
   {
-    name: "create_link",
+    name: "linkly.create_link",
     description: "Create a new Linkly short link.",
     inputSchema: {
       type: "object",
       properties: {
         url: { type: "string", description: "Destination URL", required: true },
         name: { type: "string", description: "Name/nickname for the link" },
-        note: { type: "string", description: "Private note" },
-        domain: { type: "string", description: "Custom domain" },
-        slug: { type: "string", description: "Custom slug" },
-        enabled: { type: "boolean", description: "Link active status" },
-        utm_source: { type: "string" },
-        utm_medium: { type: "string" },
-        utm_campaign: { type: "string" },
-        utm_term: { type: "string" },
-        utm_content: { type: "string" },
-        og_title: { type: "string" },
-        og_description: { type: "string" },
-        og_image: { type: "string" },
-        fb_pixel_id: { type: "string" },
-        ga4_tag_id: { type: "string" },
-        gtm_id: { type: "string" },
-        cloaking: { type: "boolean" },
-        forward_params: { type: "boolean" },
-        block_bots: { type: "boolean" },
-        hide_referrer: { type: "boolean" },
-        expiry_datetime: { type: "string" },
-        expiry_destination: { type: "string" },
       },
       required: ["url"],
     },
   },
-  // Add other tools (update_link, delete_link, etc.) following same pattern if needed
 ];
 
 /** Handle tool calls */
