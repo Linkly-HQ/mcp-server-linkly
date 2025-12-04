@@ -25,6 +25,10 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"vars": {
+		"API_KEY":"",
+		"WORKSPACE_ID":""
 	}
 	/**
 	 * Smart Placement
